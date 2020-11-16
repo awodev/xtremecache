@@ -3,7 +3,8 @@ Prestashop Xtreme cache module
 
 About
 ------
-* Caching system for Prestasho 1.7 that serves full page html.  There are no overrides.
+* Caching system for Prestasho 1.7 that serves full page html
+* There are no overrides.
 * Includes option to select caching driver
 
 Credits
