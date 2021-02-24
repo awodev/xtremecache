@@ -29,7 +29,16 @@ class phpfastcache_files extends  BasePhpFastCache implements phpfastcache_drive
 
     }
     
-    private function encodeFilename($keyword) {
+	public function getPath($create_path = false) {
+		$path = parent::getPath( $create_path );
+		$path = rtrim( $path, ' /' ) . '/files/';
+		if ( ! file_exists( $path ) ) {
+			@mkdir( $path, $this->__setChmodAuto() );
+		}
+		return $path;
+	}
+
+	private function encodeFilename($keyword) {
 	    return trim(trim(preg_replace("/[^a-zA-Z0-9]+/","_",$keyword),"_"));
         // return rtrim(base64_encode($keyword), '=');
     }
@@ -44,7 +53,7 @@ class phpfastcache_files extends  BasePhpFastCache implements phpfastcache_drive
      */
     private function getFilePath($keyword, $skip = false) {
         $path = $this->getPath();
-        
+
         $filename = $this->encodeFilename($keyword);        
         $folder = substr($filename,0,2);
         $path = rtrim($path,"/")."/".$folder;

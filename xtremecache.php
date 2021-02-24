@@ -70,6 +70,7 @@ class XtremeCache extends Module {
 
 			// called with __call()
 			&& $this->registerHook( 'actionClearCache' )
+			&& $this->registerHook( 'actionClearCompileCache' )
 			&& $this->registerHook( 'actionCategoryAdd' )
 			&& $this->registerHook( 'actionCategoryUpdate' )
 			&& $this->registerHook( 'actionCategoryDelete' )
@@ -92,14 +93,15 @@ class XtremeCache extends Module {
 		return
 			$this->unregisterHook('actionDispatcher')
 			&& $this->unregisterHook('actionOutputHTMLBefore')
-			&& $this->registerHook( 'actionClearCache' )
-			&& $this->registerHook( 'actionCategoryAdd' )
-			&& $this->registerHook( 'actionCategoryUpdate' )
-			&& $this->registerHook( 'actionCategoryDelete' )
-			&& $this->registerHook( 'actionProductAdd' )
-			&& $this->registerHook( 'actionProductUpdate' )
-			&& $this->registerHook( 'actionProductDelete' )
-			&& $this->registerHook( 'actionProductSave' )
+			&& $this->unregisterHook( 'actionClearCache' )
+			&& $this->unregisterHook( 'actionClearCompileCache' )
+			&& $this->unregisterHook( 'actionCategoryAdd' )
+			&& $this->unregisterHook( 'actionCategoryUpdate' )
+			&& $this->unregisterHook( 'actionCategoryDelete' )
+			&& $this->unregisterHook( 'actionProductAdd' )
+			&& $this->unregisterHook( 'actionProductUpdate' )
+			&& $this->unregisterHook( 'actionProductDelete' )
+			&& $this->unregisterHook( 'actionProductSave' )
 			&& parent::uninstall()
 		;
 	}
@@ -119,9 +121,16 @@ class XtremeCache extends Module {
 
 			$cached = $this->fast_cache->get( $this->getCacheKey() );
 			if ( $cached !== null ) {
-			   //empty output buffer
-			   ob_get_clean();
-			   die( $cached );
+				//empty output buffer
+				ob_get_clean();
+
+				// add no cache headers so we control when to show cached pages or not
+				header('Cache-Control: no-cache, no-store, must-revalidate');
+				header('Pragma: no-cache');
+				header('Expires: 0');
+
+				// display
+				die( $cached );
 		   }
 		}
 	}
@@ -237,15 +246,21 @@ class XtremeCache extends Module {
 
 	public function getContent() {
 		if ( Tools::isSubmit( 'submitModule' ) ) {
-			Configuration::updateValue( 'XTREMECACHE_DRIVER', Tools::getValue( 'XTREMECACHE_DRIVER' ) );
+			if ( Tools::isSubmit( 'action_clearcache' ) ) {
+				$this->fast_cache->clean();
+				Tools::redirectAdmin( $this->context->link->getAdminLink( 'AdminModules' ) . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&conf=4&module_name=' . $this->name );
+			}
+			elseif ( Tools::isSubmit( 'action_save' ) ) {
+				Configuration::updateValue( 'XTREMECACHE_DRIVER', Tools::getValue( 'XTREMECACHE_DRIVER' ) );
 
-			$this->displayConfirmation( $this->trans( 'The settings have been updated.', array(), 'Admin.Notifications.Success' ) );
-            Tools::redirectAdmin( $this->context->link->getAdminLink( 'AdminModules' ) . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&conf=4&module_name=' . $this->name );
+				$this->displayConfirmation( $this->trans( 'The settings have been updated.', array(), 'Admin.Notifications.Success' ) );
+				Tools::redirectAdmin( $this->context->link->getAdminLink( 'AdminModules' ) . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&conf=4&module_name=' . $this->name );
+			}
 		}
-		return $this->renderForm();
+		return $this->render_settings_form();
 	}
 
-	public function renderForm() {
+	public function render_settings_form() {
 		$fields_form = array(
 			'form' => array(
 				'legend' => array(
@@ -253,6 +268,12 @@ class XtremeCache extends Module {
 					'icon' => 'icon-cogs'
 				),
 				'input' => array(
+					array(
+						'type' => 'free',
+						'label' => '
+							<button type="submit" class="btn btn-danger pull-left" name="action_clearcache"><i class="fa fa-archive"></i> Clear Cache</button>
+						',
+					),
 					array(
 						'type' => 'select',
 						'label' => $this->trans('Driver'),
@@ -275,8 +296,18 @@ class XtremeCache extends Module {
                         'desc' => $this->trans('If driver is not found, defaults to using File driver'),
 					),
 				),
+				//'buttons' => array(
+				//	'clear-cache' => array(
+				//		'title' => $this->l('Clear Cache'),
+				//		'name' => 'action_clearcache',
+				//	'type' => 'submit',
+				//		'class' => 'btn btn-default pull-left',
+				//		'icon' => 'process-icon-save',
+				//	),
+				//),
 				'submit' => array(
-					'title' => $this->trans('Save', array(), 'Admin.Actions')
+					'title' => $this->trans('Save', array(), 'Admin.Actions'),
+					'name' =>'action_save',
 				)
 			),
 		);

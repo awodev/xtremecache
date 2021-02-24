@@ -2,7 +2,7 @@
 <module>
 	<name>xtremecache</name>
 	<displayName><![CDATA[Xtreme cache]]></displayName>
-	<version><![CDATA[1.7.6.5]]></version>
+	<version><![CDATA[1.7.7.2]]></version>
 	<description><![CDATA[Cache non-dynamic pages in the front office.]]></description>
 	<author><![CDATA[Simone Salerno, modified by Seyi Awofadeju]]></author>
 	<tab><![CDATA[frontend_features]]></tab>
